@@ -47,7 +47,7 @@ const db = getFirestore(app);
 //     console.log(err.code)
 // });
 
-const messaging = getMessaging(app);
+// const messaging = getMessaging(app);
 const storage = getStorage(app);
 
 // export const analytics = getAnalytics(app);
@@ -225,5 +225,4 @@ export {
     subscribe,
     getRef,
     getFCMToken,
-    messaging
 };
