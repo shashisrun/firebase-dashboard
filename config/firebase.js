@@ -1,5 +1,6 @@
 
-import {initializeApp} from "firebase/app";
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
 import { getFirestore, collection, addDoc, setDoc, doc, getDoc, getDocs, serverTimestamp, onSnapshot, CACHE_SIZE_UNLIMITED, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { getDownloadURL, getStorage, ref, uploadBytes, deleteObject } from "firebase/storage";
@@ -21,36 +22,61 @@ import localforage from "localforage";
 
 // gobistro
 const firebaseConfig = {
-    apiKey: "AIzaSyDfTxQBP0IKBil0wJJM02XKy7BzNAR6IFg",
-    authDomain: "gobistro-41952.firebaseapp.com",
-    projectId: "gobistro-41952",
-    storageBucket: "gobistro-41952.appspot.com",
-    messagingSenderId: "13703395620",
-    appId: "1:13703395620:web:6f09eb29531e4f8392dbb1",
-    measurementId: "G-PVQ0RWK6XG"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-// enableIndexedDbPersistence(db).catch((err) => {
-//     if (err.code == 'failed-precondition') {
-//         // Multiple tabs open, persistence can only be enabled
-//         // in one tab at a a time.
-//         // ...
-//     } else if (err.code == 'unimplemented') {
-//         // The current browser does not support all of the
-//         // features required to enable persistence
-//         // ...
-//     }
-//     console.log(err.code)
-// });
-
-// const messaging = getMessaging(app);
 const storage = getStorage(app);
 
-// export const analytics = getAnalytics(app);
+// forBrowser
+let analytics;
+let messaging;
+if (typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+    messaging = getMessaging(app);
+    const gettokenfromlocal = async () => {
+        const token = await localforage.getItem("fcm_token");
+        if (token) return token;
+        return null;
+    };
+    gettokenfromlocal().then((tokenInLocalForage) => {
+        // Request the push notification permission from browser
+        const getNotificationStatus = async () => {
+            return await Notification.requestPermission()
+        }
+        getNotificationStatus().then((status) => {
+            if (status && status === "granted") {
+                // Get new token from Firebase
+                const getNewToken = async () => {
+                    return await getToken({
+                        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAP_ID,
+                    });
+                }
+                alert(status);
+                getNewToken().then((fcm_token) => {
+                    alert(fcm_token);
+                    // Set token in our local storage
+                    if (fcm_token) {
+                        localforage.setItem("fcm_token", fcm_token);
+                        tokenInLocalForage = fcm_token;
+                    }
+                })
+            }
+        })
+
+    })
+    
+}
+// const analytics = getAnalytics(app);
 const auth = getAuth();
 auth.languageCode = 'en';
 
@@ -193,7 +219,7 @@ async function getFCMToken() {
         if (status && status === "granted") {
             // Get new token from Firebase
             const fcm_token = await messaging.getToken({
-                vapidKey: "BHKxz_AjD9U-RbhUCZUUgmix6J8o_3cN8gasNTHgXEXMe74fFcO_zpF94bdf21o3Vwa5MWGHDkn-RSLspBQdsjQ",
+                vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAP_ID,
             });
 
             // Set token in our local storage
@@ -224,5 +250,7 @@ export {
     createRef,
     subscribe,
     getRef,
-    getFCMToken,
+    messaging,
+    analytics,
+    getFCMToken
 };

@@ -39,7 +39,7 @@ export default function Categories() {
             type: 'multiselect',
             values: cuisines,
             valueGetter: (params) => {
-                if (params.value) return params.value.map(async (value) => getRef(value).then((response) => console.log(response)));
+                if (params.value) return params.value.map(async (value) => getRef(value).then((response) => response));
              },
             title: () => {},
             value: () => {},

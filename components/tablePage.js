@@ -51,6 +51,7 @@ export default function TablePage({ title, columns, rows, addDocument, docRoot }
             }
             delete columns[i].type;
         } else if (columns[i].type === 'multiselect') {
+            delete columns[i].type
             columns[i].renderCell = (params) => {
                 // console.log(params.value);
                 return (
